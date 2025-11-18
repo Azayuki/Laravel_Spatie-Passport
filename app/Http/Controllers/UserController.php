@@ -2,71 +2,57 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AddUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    // functions that retrieve, create, update and delete data
     public function index()
     {
-       $user = User::all(); 
-       return $this->Success($user);
-    }
+        // to get all data from a table
+        // in Eloquent ORM
+        // Model::all() | Model::get()
+        $users = User::orderBy('id', 'DESC')->get();
 
+        // return response
+        return $this->Ok($users, "Users retrieved!");
+    }
 
     public function show($id)
     {
-       $user = User::find($id); 
+       $user = User::find($id);
        if(!$user){
-           return $this->NotFound("User not found");
+           return $this->NoDataFound();
        }
-       return $this->Success($user);
+       return $this->Ok($user, "User retrieved!");
     }
 
 
-    public function store(Request $request){
-        $validator = validator()->make($request->all(), [
-            "username" => "required|alpha_dash|unique:users|min:4|max:64",
-            "email" => "required|email|unique:users|max:128",
-            "password" => "required|max:32",
-        ]);
-
-        if($validator->fails()){
-            return $this->BadRequest($validator);
-        }
-        
-        $user = User::create($validator->validated());
-        return $this->Created($user);
+    public function store(AddUserRequest $request){
+        $user = User::create($request->validated());
+        return $this->Created($user, "User created!");
     }
-    
-    public function update(Request $request, $id)
+
+    public function update(UpdateUserRequest $request, $id)
     {
-       $user = User::find($id); 
+       $user = User::find($id);
        if(!$user){
-           return $this->NotFound("User not found");
+           return $this->NoDataFound();
        }
 
-       $validator = validator()->make($request->all(), [
-            "username" => "sometimes|required|alpha_dash|unique:users,username,$id|min:4|max:64",
-            "email" => "sometimes|required|email|unique:users,email,$id|max:128",
-            "password" => "sometimes|required|max:32",
-        ]);
-
-        if($validator->fails()){
-            return $this->BadRequest($validator);
-        }
-
-        $user->update($validator->validated());
-        return $this->Success($user, "User updated successfully");
+        $user->update($request->validated());
+        return $this->Ok($user, "User updated successfully");
     }
 
     public function destroy($id)
     {
-       $user = User::find($id); 
+       $user = User::find($id);
        if(!$user){
-           return $this->NotFound("User not found");
+           return $this->NoDataFound();
        }
        $user->delete();
-       return $this->Success([], "User deleted successfully");
+       return $this->Ok(null, "User deleted successfully");
     }
 }
